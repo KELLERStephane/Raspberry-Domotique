@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# coding: utf-8
+# coding: utf-9
 
 # basé sur le script Adafruit et adapté pour Domoticz
 import os
