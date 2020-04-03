@@ -85,7 +85,7 @@ x = 0
 
 
 # Load default font.
-font = ImageFont.load_default()
+#font = ImageFont.load_default()
 
 # Alternatively load a TTF font.  Make sure the .ttf font file is in the same directory as the python script!
 # Some other nice fonts to try: http://www.dafont.com/bitmap.php
@@ -169,9 +169,19 @@ os.system("echo 'Le repertoire courant est : '")
 os.system("pwd")
 os.system("echo -n 'Date = ' && date +%D")
 os.system("echo -n 'Heure = ' && date +%H:%M")
+os.system("echo -n 'Température = '")
+print(temp)
+os.system("echo -n 'Humidité = '")
+print(humid)
+
+# Load default font.
+font = ImageFont.load_default()
 
 
-font = ImageFont.truetype('Minecraftia-Regular.ttf', 6)
+#font = ImageFont.truetype('COUR.TTF', 6)
+
+#font = ImageFont.truetype('Minecraftia-Regular.ttf',10,0,"unic")
+font = ImageFont.truetype('Minecraftia-Regular.ttf',6)
 draw.text((x, ligne1),         "TEMPERATURE",  font=font, fill=255)
 draw.text((x + 80, ligne1),    "HUMIDITE",  font=font, fill=255)
 
