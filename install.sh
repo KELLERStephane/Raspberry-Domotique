@@ -9,6 +9,13 @@
 ### ===============================================================
 
 ### ===============================================================
+### Github lien d'origine
+### ===============================================================
+
+lien_github="https://github.com/KELLERStephane/KELLER-Stephane-Tests2maths/blob/master/7%20-%20Raspberry%20Pi"
+lien_github_raw="https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi"
+
+### ===============================================================
 ### Définition des couleurs
 ### ===============================================================
 
@@ -49,7 +56,7 @@ fi
 ### ===============================================================
 
 CHOIX=$(whiptail --title "Menu d'installation du Raspberry" --checklist \
-"\nScript réalisé par :\n- KELLER Stéphane (Lycée Agricole Louis Pasteur)\n- José De Castro\nhttps://github.com/KELLERStephane/KELLER-Stephane-Tests2maths\n\nQue soutaitez-vous installer ?" 23 72 8 \
+"\nScript réalisé par :\n- KELLER Stéphane (Lycée Agricole Louis Pasteur)\n- José De Castro\nhttps://github.com/KELLERStephane/KELLER-Stephane-Tests2maths\n\nQue soutaitez-vous installer ?" 24 72 10 \
 "MAJ" "Mise a jour du systeme " OFF \
 "Webmin" "Administration du système en mode WEB " OFF \
 "Motioneye" "Logiciel de vidéosurveillance " OFF \
@@ -58,7 +65,8 @@ CHOIX=$(whiptail --title "Menu d'installation du Raspberry" --checklist \
 "Fail2map" "Affichage des ip sur une carte " OFF \
 "Domoticz" "Logiciel de domotique Domoticz " OFF \
 "GPIO" "Wiringpi pour l'utilisation des GPIO " OFF \
-"DHT22" "Capteur de température DHT22 " OFF 3>&1 1>&2 2>&3)
+"DHT22" "Capteur de température DHT22 " OFF \
+"Kuman" "Affichage données DHT22 sur écran Kuman " OFF 3>&1 1>&2 2>&3)
 
 exitstatus=$?
 
@@ -117,6 +125,23 @@ if [[ $exitstatus = 0 ]]; then
         apt -y install python3-pip
     fi
 
+    if [[ $version =~ "Python 3" ]]; then
+	#installation si Python3
+        apt install -y python3-dev
+        apt install -y python-imaging python-smbus i2c-tools
+        apt install -y python-smbus i2c-tools
+        apt install -y python3-pil
+        apt install -y python3-pip
+        apt install -y python3-setuptools
+        apt install -y python3-rpi.gpio
+        python3 -m pip install --upgrade pip setuptools wheel
+    else
+        #installation si Python2
+        apt install python-pip
+        python -m pip install --upgrade pip setuptools wheel
+        pip install Adafruit_DHT
+    fi
+
 ### ===============================================================
 ### Installation de Webmin
 ### ===============================================================
@@ -151,14 +176,14 @@ if [[ $exitstatus = 0 ]]; then
         fi
 
 	echo -e "${vertclair}\nInstallation du module bcm2835-v4l2 pour la caméra CSI OV5647 ${neutre}"
-	if [ grep -q "bcm2835-v4l2" "/etc/modules" ]; then
+	if [ grep "bcm2835-v4l2" "/etc/modules" >/dev/null ]; then
                 echo -e "${cyanclair}Le module bcm2835-v4l2 est déja déclaré dans /etc/modules ${neutre}"
 	else
  		echo "Déclaration du module bcm2835-v4l2 dans /etc/modules" | sudo tee -a /etc/modules
 	fi
 
         echo -e "${vertclair}\nDésactivation de la led de la caméra CSI OV5647 pour le Rapsberry Pi ${neutre}"
-	if [ grep -q "disable_camera_led=1" "/boot/config.txt" ]; then
+	if [ grep "disable_camera_led=1" "/boot/config.txt" >/dev/null ]; then
                 echo -e "${cyanclair}La désactivation de la led de la caméra est déja active dans /boot/config.txt ${neutre}"
         else
         	echo "disable_camera_led=1" | sudo tee -a /boot/config.txt
@@ -196,10 +221,10 @@ if [[ $exitstatus = 0 ]]; then
     if [[ $CHOIX =~ "Apache2" ]]; then
         echo -e "${bleuclair}\nInstallation d'Apache ${neutre}"
 
-#        if [ -d "/etc/apache2" ]; then
-#                echo -e "${cyanclair}Le répertoire d'installation d'Apache2 /etc/apache2 existe déja. Suppression du répertoire avant la nouvelle installation  ${neutre}"
-#                rm -r /etc/apache2
-#        fi
+        if [ -d "/etc/apache2" ]; then
+                echo -e "${cyanclair}Le répertoire d'installation d'Apache2 /etc/apache2 existe déja. Suppression du répertoire avant la nouvelle installation  ${neutre}"
+                rm -r /etc/apache2
+        fi
         apt -y install apache2
 
 	echo -e "${vertclair}suppression si nécessaire de la page par défaut d'Apache2 ${neutre}"
@@ -207,8 +232,8 @@ if [[ $exitstatus = 0 ]]; then
 		rm /var/www/html/index.html
 	fi
 
-	boucle=true
-	while $boucle;do
+	boucle1=true
+	while $boucle1;do
         	echo -e "${vertclair}\nSécuristion d'Apache2. ${neutre}"
 	        if [ -d "/var/www/passwd" ]; then
         	        echo -e "${cyanclair}Le répertoire de mots de passe /var/www/passwd existe déja. Suppression du répertoire avant la nouvelle installation  ${neutre}"
@@ -217,21 +242,30 @@ if [[ $exitstatus = 0 ]]; then
 	        echo -e "${vertclair}\nCréation du répertoire de mot de passe sécurisé /var/wwww/passwd ${neutre}"
 	        cd /var/www/
 	        mkdir passwd
-	        echo -e -n "${jauneclair}\nSaisir le nom de l'utilisateur principal pour Apache2 : ${neutre}"
-	        read username
+		boucle2=true
+	      	while $boucl2e;do
+        		usernameIDX=$(whiptail --title "Paramètres pour Apache2" --inputbox "\nSaisir le nom d'utilisateur principal pour Apache 2 : " 10 60 3>&1 1>&2 2>&3)
+               		exitstatus=$?
+               		if [ $exitstatus = 0 ]; then
+                       		boucle2=false
+               		else
+                       		echo "Tu as annulé... Recommence :-("
+               		fi
+       		done
+		echo -e "${vertclair}Ajout de l'IDX dans le fichier dht22.py ${neutre}"
 	        htpasswd -c /var/www/passwd/passwords "$username"
 		erreur=$?
 #		echo -e "L'erreur est $erreur"
 		if [ "$erreur" = 0 ]; then
-			boucle=false
+			boucle1=false
 		else
 			echo -e "${rougeclair}Erreur. Recommencer ${neutre}"
 		fi
 	done
 
         echo -e "${vertclair}\nModification du fichier /etc/apache2/apache2.conf pour sécuriser l'accès à Apache2 ${neutre}"
-        if [ grep -q "AuthName \"ACCES PROTEGE\"" "/etc/modules"]; then
-                echo -e "${cyanclair}Le fichier /etc/apache2/apache2.conf a déjà été modifiéa ${neutre}"
+        if [ grep "AuthName \"ACCES PROTEGE\"" "/etc/modules" >/dev/null ]; then
+                echo -e "${cyanclair}Le fichier /etc/apache2/apache2.conf a déjà été modifié ${neutre}"
 		echo -e "${cyanclair}Poursuite de l'installation ${neutre}"
         else
                 echo -e "${vertclair}Sauvegarde du fichier /etc/apache2/apache2.conf dans /etc/apache2/apach2.copy ${neutre}"
@@ -284,7 +318,7 @@ if [[ $exitstatus = 0 ]]; then
                 echo -e "${cyanclair}Effacement du fichier puis création du nouveau fichier ${neutre}"
                 rm /etc/fail2ban/jail.d/custom.conf
         fi
-        wget -P /etc/fail2ban/jail.d/ https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi/custom.conf
+        wget -P /etc/fail2ban/jail.d/ $lien_github_raw/custom.conf
 	chown pi:pi /etc/fail2ban/jail.d/custom.conf
 	#installation de Postfix pour envoi des mails d'alerte
 	echo -e "${vertclair}\nInstallation de Postfix si nécessaire pour l'envoi des mails d'alerte ${neutre} ${neutre}"
@@ -356,7 +390,7 @@ if [[ $exitstatus = 0 ]]; then
         fi
 
 	mkdir /home/pi/script
-	wget -P /home/pi/script/ https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi/jails.sh
+	wget -P /home/pi/script/ $lien_github_raw/jails.sh
 	chown pi:pi  /home/pi/script/jails.sh
 	chmod +x /home/pi/script/jails.sh
 	echo -e "${vertclair}\nCréation d'un raccourci vers le bureau ${neutre}"
@@ -373,7 +407,7 @@ if [[ $exitstatus = 0 ]]; then
         echo -e "${vertclair}\nTéléchargement si nécessaire du script banip.sh ${neutre}"
         echo -e "${vertclair}pour bannir ou débannir une adresse IP : ${neutre}"
         echo -e "${vertclair}/home/pi/script/jails.sh ${neutre}"
-  	wget -P /home/pi/script/ https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi/banip.sh
+  	wget -P /home/pi/script/ $lien_github_raw/banip.sh
 	chown pi:pi  /home/pi/script/banip.sh
 	chmod +x /home/pi/script/banip.sh
         if [ -h "/home/pi/banip.sh" ]; then
@@ -492,13 +526,13 @@ if [[ $exitstatus = 0 ]]; then
         echo -e "${cyanclair}Effacement du fichier puis création du nouveau fichier ${neutre}"
         rm /etc/fail2ban/filter.d/domoticz.conf
     fi
-    wget -P /etc/fail2ban/filter.d/ https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi/domoticz.conf
+    wget -P /etc/fail2ban/filter.d/ $lien_github_raw/domoticz.conf
     chown pi:pi /etc/fail2ban/filter.d/domoticz.conf
 
     if [ -e !/etc/fail2ban/jail.d/custom.conf ] ; then
 	echo -e "${cyanclair}\nLe fichier /etc/fail2ban/jail.d/custom.conf n'existe pas ! ${neutre}"
 	echo -e "${vertclair}\nTéléchargement du fichier de configuration des prisons (à personnaliser) ${neutre}"
-	wget -P /etc/fail2ban/jail.d/ https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi/custom.conf
+	wget -P /etc/fail2ban/jail.d/ $lien_github_raw/custom.conf
 	chown pi:pi /etc/fail2ban/jail.d/custom.conf
     echo -e "${cyanclair}\nCr&ation de la prison domoticz dans le fichier /etc/fail2ban/jail.d/custom.conf ${neutre}"
     L1='[domoticz]'
@@ -529,74 +563,46 @@ if [[ $exitstatus = 0 ]]; then
 ### ===============================================================
 
     if [[ $CHOIX =~ "DHT22" ]]; then
-		echo -e "${bleuclair}\nInstallation du capteur DHT22 ${neutre}"
-		echo -e "${rougeclair}\nDomoticz doit être installé et le capteur relié au raspberry ${neutre}"
-		echo -e "${rougeclair}Il faut connaître et renseigner : ${neutre}"
-		echo -e "${rougeclair}- l'IDX du capteur dht22 dans domoticz ; ${neutre}"
-		echo -e "${rougeclair}- le numéro GPIO BCM sur lequel est relié le capteur. ${neutre}"
-		echo -e "${rougeclair}\nNe pas oublier d'activer les GPIO avec sudo raspi-config ${neutre}" 
-		echo -e "${rougeclair}Ne pas oublier d'activer I2C avec sudo raspi-config ${neutre}"
+	echo -e "${bleuclair}\nInstallation du capteur DHT22 ${neutre}"
+	echo -e "${rougeclair}\nDomoticz doit être installé et le capteur relié au Raspberry ${neutre}"
+	echo -e "${rougeclair}Il faut connaître et renseigner : ${neutre}"
+	echo -e "${rougeclair}- l'IDX du capteur dht22 dans domoticz ; ${neutre}"
+	echo -e "${rougeclair}- le numéro GPIO BCM sur lequel est relié le capteur. ${neutre}"
+	echo -e "${rougeclair}\nNe pas oublier d'activer les GPIO avec sudo raspi-config ${neutre}" 
+	echo -e "${rougeclair}Ne pas oublier d'activer I2C avec sudo raspi-config ${neutre}"
 
         if [ -d "/home/pi/script/Adafruit_Python_DHT" ]; then
                 echo -e "${cyanclair}\nLe répertoire d'installation /home/pi/script/Adafruit_Python_DHT existe déja. Suppression du répertoire avant la nouvelle installation ${neutre}"
                 rm -r /home/pi/script/Adafruit_Python_DHT
-        fi
-        if [ -d "/home/pi/script/Adafruit_Python_SSD1306" ]; then
-                echo -e "${cyanclair}Le répertoire d'installation /home/pi/script/Adafruit_Python_SSD1306 existe déja. Suppression du répertoire avant la nouvelle installation  ${neutre}"
-                rm -r /home/pi/script/Adafruit_Python_SSD1306
         fi
         if [ -e /home/pi/script/dht22.py ] ; then
              echo -e "${cyanclair}\nLe fichier /home/pi/script/dht22.py existe déja ${neutre}"
              echo -e "${cyanclair}Effacement du fichier puis création du nouveau fichier ${neutre}"
              rm /home/pi/script/dht22.py
         fi
-        if [ -e /usr/share/fonts/truetype/Minecraftia/Minecraftia-Regular.ttf ] ; then
-             echo -e "${cyanclair}\nLe fichier /usr/share/fonts/truetype/Minecraftia/Minecraftia-Regular.ttf existe déja ${neutre}"
-	else
-             echo -e "${cyanclair}\nTéléchargment du fichier /usr/share/fonts/truetype/Minecraftia/Minecraftia-Regular.ttf ${neutre}"
- 	     wget -P /usr/share/fonts/truetype/Minecraftia/ https://github.com/KELLERStephane/KELLER-Stephane-Tests2maths/blob/master/7%20-%20Raspberry%20Pi/Minecraftia-Regular.ttf
-        fi
 
         cd /home/pi/script
         #Téléchargement des bibliothèques et des fichiers
         echo -e "${bleuclair}\nInstallation des bilbiothèques AdaFruit pour le capteur DHT22 (nécessite Domoticz) ${neutre}"
         git clone https://github.com/adafruit/Adafruit_Python_DHT.git
-        git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git
-        sudo chown pi:pi jails.sh Adafruit_Python_DHT/
-        sudo chown pi:pi jails.sh Adafruit_Python_SSD1306/
+        sudo chown pi:pi /home/pi/script/Adafruit_Python_DHT
 
 	version=$(python --version 2>&1 | cut -c1-8)
 	echo -e "${vertclair}\nVersion de Python par défaut : ${neutre}"
 	echo -e -n $version
 	if [[ $version =~ "Python 3" ]]; then
 		#installation si Python3
-		apt install -y python3-dev
-		apt install -y python-imaging python-smbus i2c-tools
-		apt install -y python-smbus i2c-tools
-		apt install -y python3-pil
-		apt install -y python3-pip
-		apt install -y python3-setuptools
-		apt install -y python3-rpi.gpio
-		python3 -m pip install --upgrade pip setuptools wheel
-		pip3 install Adafruit_DHT
 		cd /home/pi/script/Adafruit_Python_DHT
 		python3 setup.py install
-		cd /home/pi/script/Adafruit_Python_SSD1306
-		sudo python3 setup.py install
 	else
 		#installation si Python2
-		apt install python-pip
-		python -m pip install --upgrade pip setuptools wheel
-		pip install Adafruit_DHT
 		cd /home/pi/script/Adafruit_Python_DHT
 		python setup.py install
-                cd /home/pi/script/Adafruit_Python_SSD1306
-                python setup.py install
 	fi
 
-	echo -e "${vertclair}\nTéléchargement du fichier dht22.py et de la police de caractère ${neutre}"
-	wget https://raw.githubusercontent.com/KELLERStephane/KELLER-Stephane-Tests2maths/master/7%20-%20Raspberry%20Pi/dht22.py
-	chown pi:pi dht22.py
+	echo -e "${vertclair}\nTéléchargement du fichier dht22.py ${neutre}"
+	wget -P /home/pi/script $lien_github_raw/dht22.py
+	chown pi:pi /home/pi/script/dht22.py
 	chmod +x /home/pi/script/dht22.py
 
 	#Saisie des paramètres pour le fichier dht22.py
@@ -677,8 +683,8 @@ if [[ $exitstatus = 0 ]]; then
 	echo -e "${vertclair}Ajout du numéro de GPIO (BCM) dans le fichier dht22.py ${neutre}"
 
 	crontab -u root -l > /tmp/toto.txt # export de la crontab
-	grep "dht22.py" /tmp/toto.txt >/dev/null
-	if [[ $? != 0 ]];then
+	grep "dht22.py" "/tmp/toto.txt" >/dev/null
+	if [ $? != 0 ];then
                echo -e "${vertclair}\nModification de la crontab : affichage de temp+hum toutes les 10 mn chaque jour: ${neutre}"
                echo -e "\n#affichage de la temp+hum toutes les 10 mn chaque jour" >> /tmp/toto.txt # ajout de la ligne dans le fichier temporaire
                echo -e "*/10 * * * * sudo /home/pi/script/dht22.py" >> /tmp/toto.txt # ajout de la ligne dans le fichier temporaire
@@ -686,14 +692,77 @@ if [[ $exitstatus = 0 ]]; then
                rm /tmp/toto.txt # le fichier temporaire ne sert plus à rien
 	fi
 
-	echo -e "${vertclair}\nTest module i2c : ${neutre}"
-	lsmod | grep i2c_
-	echo -e "${vertclair}\nVérification de l'adresse du périphérique i2c : ${neutre}"
-	i2cdetect -y 1
 	echo -e "${vertclair}\nTest du capteur de température : ${neutre}"
 	sudo /home/pi/script/Adafruit_Python_DHT/examples/AdafruitDHT.py 22 26
-fi
+    fi
 
+### ===============================================================
+### Ecran Kuman pour affichage données DHT22
+### ===============================================================
+
+    if [[ $CHOIX =~ "Kuman" ]]; then
+	echo -e "${bleuclair}\nInstallation de l'écran Kuman ${neutre}"
+	echo -e "${rougeclair}\nDomoticz doit être installé. ${neutre}"
+	echo -e "${rougeclair}Le capteur DHT22 et l'écran Kuman, doivent être reliés au Raspberry : ${neutre}"
+
+        if [[ $version =~ "Python 3" ]]; then
+                #installation si Python3
+                cd /home/pi/script/Adafruit_Python_SSD1306
+                sudo python3 setup.py install
+        else
+                #installation si Python2
+                cd /home/pi/script/Adafruit_Python_SSD1306
+                python setup.py install
+        fi
+        if [ -d "/home/pi/script/Adafruit_Python_SSD1306" ]; then
+                echo -e "${cyanclair}Le répertoire d'installation /home/pi/script/Adafruit_Python_SSD1306 existe déja. Suppression du répertoire avant la nouvelle installation ${neutre}"
+                rm -r /home/pi/script/Adafruit_Python_SSD1306
+        fi
+        if [ -e /home/pi/script/kuman.py ] ; then
+             	echo -e "${cyanclair}\nLe fichier /home/pi/script/kuman.py existe déja ${neutre}"
+             	echo -e "${cyanclair}Effacement du fichier puis création du nouveau fichier ${neutre}"
+             	rm /home/pi/script/kuman.py
+        fi
+        if [ -e /usr/share/fonts/truetype/Minecraftia/Minecraftia-Regular.ttf ] ; then
+             	echo -e "${cyanclair}\nLe fichier /usr/share/fonts/truetype/Minecraftia/Minecraftia-Regular.ttf existe déja ${neutre}"
+        else
+             	echo -e "${cyanclair}\nTéléchargment du fichier /usr/share/fonts/truetype/Minecraftia/Minecraftia-Regular.ttf ${neutre}"
+		mkdir /usr/share/fonts/truetype/Minecraftia >/dev/null
+             	wget -P /usr/share/fonts/truetype/Minecraftia/ wget $lien_github/Minecraftia-Regular.ttf
+        fi
+
+        cd /home/pi/script
+        #Téléchargement des bibliothèques et des fichiers
+        echo -e "${bleuclair}\nInstallation des bilbiothèques AdaFruit pour l'écran Kuman (nécessite Domoticz) ${neutre}"
+        git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git
+        chown pi:pi /home/pi/script/Adafruit_Python_SSD1306
+
+        echo -e "${vertclair}\nTéléchargement du fichier kuman.py ${neutre}"
+        wget -P /home/pi/script $lien_github_raw/kuman.py
+        chown pi:pi /home/pi/script/kuman.py
+        chmod +x /home/pi/script/kuman.py
+
+#####################################################################################################
+	#Ajout du lancement de kuman.py dans dht22.py
+	echo -e "${vertclair}\nModification du fichier /home/pi/script/dht22.py ${neutre}"
+	grep "kuman.py" "/home/pi/script/dht22.py" >/dev/null
+	if [ $? = 0 ];then
+                echo -e "${cyanclair}Le fichier /home/pi/script/dht22.py a déjà été modifié ${neutre}"
+		echo -e "${cyanclair}Poursuite de l'installation ${neutre}"
+	else
+		echo -e "\nkuman.py" >>/home/pi/script/dht22.py
+        fi
+
+#########################################################################################################
+
+        echo -e "${vertclair}\nTest module i2c : ${neutre}"
+        lsmod | grep i2c_
+        echo -e "${vertclair}\nVérification de l'adresse du périphérique i2c : ${neutre}"
+        i2cdetect -y 1
+
+        echo -e "${vertclair}\nTest du capteur de température : ${neutre}"
+        /home/pi/script/Adafruit_Python_DHT/examples/AdafruitDHT.py 22 26
+    fi
 
 ### ===============================================================
 ### Copyright
